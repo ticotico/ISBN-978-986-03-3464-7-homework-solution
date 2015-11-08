@@ -9,3 +9,4 @@ git add README.md
 git commit -m "first commit"
 git remote add origin https://github.com/ticotico/ISBN-978-986-03-3464-7-homework-solution.git
 git push -u origin master
+git filename.md
