@@ -44,62 +44,37 @@ BS_Tree *insert_sort_BS_Tree (BS_Tree *root, Datatpye data)
 	return current;
 }
 
-BS_Tree *find_first_BS_Tree_data (BS_Tree *root, Datatpye data)
+BS_Tree *find_delete_leaf_and_its_parent(BS_Tree *root, BS_Tree **parent)
 {
-	if (root == NULL) return NULL;
-	if (root->data == data) return root;
-	
-	if (data < root->data)
-		return find_first_BS_Tree_data(root->left, data);
-	else
-		return find_first_BS_Tree_data(root->right, data);
-}
-
-BS_Tree *find_max_BS_Tree_data(BS_Tree *root)
-{
-	
-	if (root == NULL) return NULL;
-	if (root->left == NULL && root->right == NULL) return root;
-	if (root->right != NULL) return find_max_BS_Tree_data(root->right);
-	return root;
-}
-
-BS_Tree *find_min_BS_Tree_data(BS_Tree *root)
-{
-	if (root == NULL) return NULL;
-	if (root->left == NULL && root->right == NULL) return root;
-	if (root->left != NULL) return find_min_BS_Tree_data(root->left);
-	return root;
-}
-
-BS_Tree *find_data_parent(BS_Tree *root, Datatpye data)
-{
-	BS_Tree *current = root;
-	BS_Tree *parent;
-	if (current == NULL || current->data == data)
-		return NULL;
-	if (current->left != NULL && current->left->data == data)
-		return current;
-	if (current->right != NULL && current->right->data == data)
-		return current;
-	
-	parent = find_data_parent(root->left, data);
-	if (parent != NULL) return parent;
-	parent = find_data_parent(root->right, data);
-	if (parent != NULL) return parent;
-	return NULL;
+	BS_Tree *del_leaf = root;
+	if (del_leaf == NULL) return NULL;
+	*parent = del_leaf;
+	if (del_leaf->left != NULL)
+		while (del_leaf->left != NULL || del_leaf->right != NULL) {
+			*parent = del_leaf;
+			if (del_leaf->right != NULL)
+				del_leaf = del_leaf->right;
+			else
+				del_leaf = del_leaf->left;
+		}
+	else if (del_leaf->right != NULL)
+		while (del_leaf->left != NULL || del_leaf->right != NULL) {
+			*parent = del_leaf;
+			if (del_leaf->left != NULL)
+				del_leaf = del_leaf->left;
+			else
+				del_leaf = del_leaf->right;
+		}
+	return del_leaf;
 }
 
 BS_Tree *remove_BS_Tree_data(BS_Tree *root, Datatpye data)
 {
-	BS_Tree *current = root;
-	BS_Tree *data_pos = current;
+	BS_Tree *data_pos = root;
 	BS_Tree *data_parent = NULL;
 	BS_Tree *delete_node;
-	BS_Tree *delete_node_parent;
-	
-	//case: tree is empty
-	if (root == NULL) return NULL;
+	BS_Tree *delete_node_parent = NULL;
+
 	//find data_pos
 	while (data_pos != NULL && data_pos->data != data) {
 		data_parent = data_pos;
@@ -108,74 +83,38 @@ BS_Tree *remove_BS_Tree_data(BS_Tree *root, Datatpye data)
 		else
 			data_pos = data_pos->right;
 	}
-	//case: not find data
+	//case: tree is empty or not find data
 	if (data_pos == NULL) return root;
-	//case: data_pos at leaf node
+	//case: root is a leafnode
 	if (data_pos->left == NULL && data_pos->right == NULL) {
-		if (data_parent != NULL) {
-			if(data_parent->left == data_pos)
-				data_parent->left = NULL;
-			if(data_parent->right == data_pos)
-				data_parent->right = NULL;
-		}
-		
 		#ifdef DEBUG
-		printf("free %p\n", data_pos);
+		printf("line %d: free %p\n", __LINE__, data_pos);
 		#endif //DEBUG
 		free(data_pos);
-		if (data_parent != NULL)
-			return root;
-		else
-			return NULL;
-	}
-	//case: data_pos has left subtree 
-	//(replace left subtree right most leaf node to find data)
-	if (data_pos->left != NULL) {
-		delete_node_parent = data_pos;
-		delete_node = data_pos->left;
-		while(delete_node->left != NULL || delete_node->right != NULL) {
-			delete_node_parent = delete_node;
-			if (delete_node->right != NULL)
-				delete_node = delete_node->right;
-			else if (delete_node->left != NULL)
-				delete_node = delete_node->left;
-		}
-		data_pos->data = delete_node->data;
-		if (delete_node_parent->left == delete_node)
-			delete_node_parent->left = NULL;
-		else if (delete_node_parent->right == delete_node)
-			delete_node_parent->right = NULL;
-		#ifdef DEBUG
-		printf("free %p\n", delete_node);
-		#endif //DEBUG
-		free(delete_node);
-		return root;
-	}
-	//case: data_pos has right subtree 
-	//(replace right subtree left most leaf node to find data)
-	if (data_pos->right != NULL) {
-		delete_node_parent = data_pos;
-		delete_node = data_pos->right;
-		while(delete_node->left != NULL || delete_node->right != NULL) {
-			delete_node_parent = delete_node;
-			if (delete_node->left != NULL)
-				delete_node = delete_node->left;
-			else if (delete_node->right != NULL)
-				delete_node = delete_node->right;
-		}
-		data_pos->data = delete_node->data;
-		if (delete_node_parent->left == delete_node)
-			delete_node_parent->left = NULL;
-		else if (delete_node_parent->right == delete_node)
-			delete_node_parent->right = NULL;
-		#ifdef DEBUG
-		printf("free %p\n", delete_node);
-		#endif //DEBUG
-		free(delete_node);
-		return root;
+		return NULL;
 	}
 	
-	return NULL;
+	delete_node_parent = data_parent;
+	delete_node = find_delete_leaf_and_its_parent(data_pos, &delete_node_parent);
+	
+	data_pos->data = delete_node->data;
+	if (delete_node_parent !=  NULL) {
+		if (delete_node_parent->left == delete_node)
+			delete_node_parent->left = NULL;
+		else if (delete_node_parent->right == delete_node)
+			delete_node_parent->right = NULL;
+		#ifdef DEBUG
+		else printf("line %d: delete_node_parent doesn't "
+			"point to delete_node", __LINE__);
+		#endif //DEBUG
+	}
+	
+	#ifdef DEBUG
+	printf("line %d: free %p\n", __LINE__, delete_node);
+	#endif //DEBUG
+	free(delete_node);
+	
+	return root;
 }
 
 BS_Tree *destroy_BS_tree (BS_Tree *root)
@@ -213,6 +152,7 @@ int main (void)
 		root = insert_sort_BS_Tree(root, data);
 	} while(c != '\n');
 	
+	putchar('\n');
 	do {
 		scanf("%d", &data);
 		c = getchar();
@@ -226,6 +166,14 @@ int main (void)
 		putchar('\n');
 		#endif // DEBUG
 	} while(c != '\n');
+	
+	if (root == NULL)
+		printf("tree is empty\n");
+	else {
+		printf("print_inorder:\n");
+		print_inorder(root);
+		putchar('\n');
+	}
 	
 	destroy_BS_tree(root);
 	return 0;
