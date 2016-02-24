@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
-#
 
 int comp(const void *data1, const void *data2)
 {
