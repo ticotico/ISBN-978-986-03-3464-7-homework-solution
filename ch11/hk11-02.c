@@ -26,6 +26,6 @@ int main(void)
 		for (j = 0; j < 4; j++)
 			if (s1[i] == s2[j])
 				count_b++;
-	printf("%dA%dB\n", count_a, count_b);
+	printf("%dA%dB\n", count_a, count_b - count_a);
 	return 0;
 }
